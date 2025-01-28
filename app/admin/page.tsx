@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -11,37 +11,70 @@ import { AddEmployeeDialog } from "@/components/add-employee-dialog";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
-// Temporary mock data - replace with actual API call
-const employees = [
+// Mock data
+const mockAttendanceRecords = [
   {
     id: 1,
-    name: "Alex Thompson",
-    email: "alex.t@company.com",
-    department: "Engineering",
-    attendance: 92,
-    avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex"
+    name: "John Doe",
+    email: "john@example.com",
+    date: "2024-01-29",
+    time: "09:00 AM",
+    location: { lat: "40.7128° N", lng: "74.0060° W" },
+    status: "Present"
   },
   {
     id: 2,
-    name: "Sarah Wilson",
-    email: "sarah.w@company.com",
-    department: "Design",
-    attendance: 88,
-    avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah"
+    name: "Jane Smith",
+    email: "jane@example.com",
+    date: "2024-01-29",
+    time: "08:45 AM",
+    location: { lat: "40.7128° N", lng: "74.0060° W" },
+    status: "Present"
   },
-  // Add more mock employees as needed
+  {
+    id: 3,
+    name: "Mike Johnson",
+    email: "mike@example.com",
+    date: "2024-01-29",
+    time: "09:15 AM",
+    location: { lat: "40.7128° N", lng: "74.0060° W" },
+    status: "Present"
+  },
+  {
+    id: 4,
+    name: "Sarah Wilson",
+    email: "sarah@example.com",
+    date: "2024-01-29",
+    time: "09:30 AM",
+    location: { lat: "40.7128° N", lng: "74.0060° W" },
+    status: "Present"
+  },
+  {
+    id: 5,
+    name: "Alex Thompson",
+    email: "alex@example.com",
+    date: "2024-01-29",
+    time: "08:30 AM",
+    location: { lat: "40.7128° N", lng: "74.0060° W" },
+    status: "Present"
+  }
 ];
 
 export default function AdminDashboard() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const router = useRouter();
 
-  const filteredEmployees = employees.filter(employee => 
-    employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    employee.department.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredRecords = mockAttendanceRecords.filter(record => {
+    const matchesSearch = 
+      record.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      record.email.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesDate = selectedDate ? record.date === selectedDate : true;
+    
+    return matchesSearch && matchesDate;
+  });
 
   const handleAddEmployee = (data: { name: string; email: string; department: string }) => {
     // TODO: Integrate with your backend
@@ -50,95 +83,137 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex justify-between items-center">
-          <Button 
-            variant="ghost" 
-            onClick={() => router.push('/')}
-            className="gap-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-          <ThemeToggle />
+    <main className="min-h-screen bg-gray-50 p-4 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header Section */}
+        <div className="mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">
+            Admin Dashboard
+          </h1>
+          <p className="text-gray-500 mt-2">
+            Manage and monitor employee attendance
+          </p>
         </div>
 
-        <div className="text-center">
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <p className="text-muted-foreground">Manage your employees and view attendance records</p>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Total Attendance</CardTitle>
+              <CardDescription>Today&apos;s attendance count</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-blue-600">25</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Present</CardTitle>
+              <CardDescription>Employees present today</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-green-600">22</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Absent</CardTitle>
+              <CardDescription>Employees absent today</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-3xl font-bold text-red-600">3</p>
+            </CardContent>
+          </Card>
         </div>
 
-        <div className="flex justify-between items-center gap-4">
-          <Input
-            placeholder="Search employees..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="max-w-sm"
-          />
-          <Button onClick={() => setIsDialogOpen(true)}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add Employee
-          </Button>
-        </div>
+        {/* Attendance List */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Attendance Records</CardTitle>
+                <CardDescription>View and manage employee attendance</CardDescription>
+              </div>
+              <div className="flex gap-4">
+                <input
+                  type="search"
+                  placeholder="Search employees..."
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <input
+                  type="date"
+                  className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200">
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Employee</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Date & Time</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Location</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Photo</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {filteredRecords.map((record) => (
+                    <tr key={record.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-4">
+                        <div className="flex items-center">
+                          <div className="h-10 w-10 flex-shrink-0">
+                            <div className="h-10 w-10 rounded-full bg-gray-200" />
+                          </div>
+                          <div className="ml-4">
+                            <div className="font-medium text-gray-900">{record.name}</div>
+                            <div className="text-gray-500">{record.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-500">
+                        <div>{record.date}</div>
+                        <div>{record.time}</div>
+                      </td>
+                      <td className="px-4 py-4 text-sm text-gray-500">
+                        <div>Lat: {record.location.lat}</div>
+                        <div>Long: {record.location.lng}</div>
+                      </td>
+                      <td className="px-4 py-4">
+                        <div className="h-12 w-12 rounded bg-gray-200" />
+                      </td>
+                      <td className="px-4 py-4">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                          {record.status}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEmployees.map((employee) => (
-            <Card 
-              key={employee.id} 
-              className={cn(
-                "transition-colors duration-200",
-                "hover:bg-primary hover:text-primary-foreground",
-                "group cursor-pointer"
-              )}
-              onClick={() => router.push(`/admin/${employee.id}`)}
-            >
-              <CardHeader className="flex flex-row items-center gap-4">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={employee.avatarUrl} alt={employee.name} />
-                  <AvatarFallback>{employee.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                </Avatar>
-                <div className="flex flex-col">
-                  <CardTitle className="text-lg">{employee.name}</CardTitle>
-                  <p className="text-sm text-muted-foreground group-hover:text-primary-foreground/80">
-                    {employee.department}
-                  </p>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground group-hover:text-primary-foreground/80">
-                      Email
-                    </p>
-                    <p className="text-sm truncate">{employee.email}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground group-hover:text-primary-foreground/80">
-                      Attendance
-                    </p>
-                    <p className={cn(
-                      "text-sm font-medium",
-                      "group-hover:text-primary-foreground",
-                      !employee.attendance && "text-muted-foreground",
-                      employee.attendance >= 90 ? "text-green-500" :
-                      employee.attendance >= 80 ? "text-yellow-500" : "text-red-500"
-                    )}>
-                      {employee.attendance}%
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        <AddEmployeeDialog 
-          open={isDialogOpen} 
-          onOpenChange={setIsDialogOpen}
-          onSubmit={handleAddEmployee}
-        />
+            {/* Pagination */}
+            <div className="flex items-center justify-between mt-6">
+              <div className="text-sm text-gray-500">
+                Showing {filteredRecords.length} of {mockAttendanceRecords.length} entries
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm">Previous</Button>
+                <Button variant="outline" size="sm">Next</Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </main>
   );
 } 
