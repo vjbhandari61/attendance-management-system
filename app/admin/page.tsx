@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
@@ -10,51 +10,52 @@ import { PlusCircle, ArrowLeft } from "lucide-react";
 import { AddEmployeeDialog } from "@/components/add-employee-dialog";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
+import { IEmployee } from "@/models/Employee";
 
-// Temporary mock data - replace with actual API call
-const employees = [
-  {
-    id: 1,
-    name: "Alex Thompson",
-    email: "alex.t@company.com",
-    department: "Engineering",
-    attendance: 92,
-    avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex"
-  },
-  {
-    id: 2,
-    name: "Sarah Wilson",
-    email: "sarah.w@company.com",
-    department: "Design",
-    attendance: 88,
-    avatarUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah"
-  },
-  // Add more mock employees as needed
-];
-
-export default function AdminDashboard() {
+const AdminDashboard = () => {
+  const [employees, setEmployees] = useState<IEmployee[]>([]); // Use the Employee type
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const router = useRouter();
 
-  const filteredEmployees = employees.filter(employee => 
+  useEffect(() => {
+    const fetchEmployees = async () => {
+      const response = await fetch('/api/employees');
+      const data: IEmployee[] = await response.json(); // Type the response data
+      setEmployees(data);
+    };
+
+    fetchEmployees();
+  }, []);
+
+  const filteredEmployees = employees.filter(employee =>
     employee.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     employee.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
     employee.department.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handleAddEmployee = (data: { name: string; email: string; department: string }) => {
-    // TODO: Integrate with your backend
-    console.log("New employee:", data);
-    setIsDialogOpen(false);
+  const handleAddEmployee = async (data: IEmployee) => {
+    data.avatarUrl = `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.name}`
+    const response = await fetch('/api/employees', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (response.ok) {
+      const newEmployee = await response.json();
+      // Update your state or UI accordingly
+    }
   };
 
   return (
     <div className="min-h-screen bg-background p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex justify-between items-center">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => router.push('/')}
             className="gap-2"
           >
@@ -84,14 +85,14 @@ export default function AdminDashboard() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEmployees.map((employee) => (
-            <Card 
-              key={employee.id} 
+            <Card
+              key={employee.empId}
               className={cn(
                 "transition-colors duration-200",
                 "hover:bg-primary hover:text-primary-foreground",
                 "group cursor-pointer"
               )}
-              onClick={() => router.push(`/admin/${employee.id}`)}
+              onClick={() => router.push(`/admin/${employee.empId}`)}
             >
               <CardHeader className="flex flex-row items-center gap-4">
                 <Avatar className="h-12 w-12">
@@ -117,28 +118,53 @@ export default function AdminDashboard() {
                     <p className="text-sm text-muted-foreground group-hover:text-primary-foreground/80">
                       Attendance
                     </p>
-                    <p className={cn(
-                      "text-sm font-medium",
-                      "group-hover:text-primary-foreground",
-                      !employee.attendance && "text-muted-foreground",
-                      employee.attendance >= 90 ? "text-green-500" :
-                      employee.attendance >= 80 ? "text-yellow-500" : "text-red-500"
-                    )}>
-                      {employee.attendance}%
+                    <p
+                      className={cn(
+                        "text-sm font-medium",
+                        "group-hover:text-primary-foreground",
+                        !employee.attendance && "text-muted-foreground"
+                      )}
+                    >
+                      {employee.attendance?.length > 0
+                        ? employee.attendance.map((record, i) => {
+                          if (record.checkIn && record.checkOut) {
+                            return (
+                              <span key={i} className="text-green-500">
+                                Present
+                              </span>
+                            );
+                          } else if (record.checkIn && !record.checkOut) {
+                            return (
+                              <span key={i} className="text-yellow-500">
+                                -
+                              </span>
+                            );
+                          } else {
+                            return (
+                              <span key={i} className="text-red-500">
+                                Absent
+                              </span>
+                            );
+                          }
+                        })
+                        : "No records"}
                     </p>
                   </div>
+
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <AddEmployeeDialog 
-          open={isDialogOpen} 
+        <AddEmployeeDialog
+          open={isDialogOpen}
           onOpenChange={setIsDialogOpen}
           onSubmit={handleAddEmployee}
         />
       </div>
     </div>
   );
-} 
+};
+
+export default AdminDashboard; 
